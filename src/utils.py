@@ -1,5 +1,7 @@
 import numpy as np 
-from src.methods.knn import KNN 
+from src.methods.knn import KNN
+from src.methods.linear_regression import LinearRegression
+from matplotlib import pyplot as plt 
 
 # Generaly utilies
 ##################
@@ -159,9 +161,9 @@ def mse_fn(pred,gt):
     return loss
 
 
-### K-fold cross validation 
+### Methods for K-fold cross validation 
 
-def KFold_cross_validation_KNN(X, Y, K, k):
+def KFold_cross_validation_KNN(X, Y, K, k,M,T):
 
     '''
     K-Fold Cross validation function for K-NN
@@ -170,6 +172,8 @@ def KFold_cross_validation_KNN(X, Y, K, k):
         Y: training labels, shape (N,)
         K: number of folds (K in K-fold)
         k: number of neighbors for kNN algorithm (the hyperparameter)
+        M: method 
+        T: task kind 
     Returns:
         Average validation accuracy for the selected k.
     '''
@@ -178,20 +182,13 @@ def KFold_cross_validation_KNN(X, Y, K, k):
     accuracies = []  # list of accuracies
     all_indices = np.arange(N)
     np.random.shuffle(all_indices)
-    np.random.shuffle(all_indices)
-    np.random.shuffle(all_indices)
-    np.random.shuffle(all_indices)
-    np.random.shuffle(all_indices)
-    print(all_indices)
     for fold_ind in range(K):
         #Split the data into training and validation folds:
-        #all the indices of the training dataset
         split_size = N // K
 
         # Indices of the validation and training examples
         val_ind = all_indices[fold_ind * split_size : (fold_ind + 1) * split_size]
 
-        ## YOUR CODE HERE (hint: np.setdiff1d is your friend)
         train_ind = np.setdiff1d(all_indices,val_ind)
 
         X_train_fold = X[train_ind,:]
@@ -199,26 +196,28 @@ def KFold_cross_validation_KNN(X, Y, K, k):
         X_val_fold = X[val_ind,:]
         Y_val_fold = Y[val_ind]
 
-        # Run KNN using the data folds you found above.
+        if M == "knn":
+            if T == "breed_identifying":
+                model = KNN(k,task_kind="classification")  # Instantiate the KNN model with the appropriate 'k'
+            else:
+                model = KNN(k,task_kind="regression")
+    
+        model.fit(X_train_fold, Y_train_fold)  # Train the model
 
-        # YOUR CODE HERE
+        Y_val_fold_pred = model.predict(X_val_fold)  # Make predictions
 
-        knn_model = KNN(k,task_kind="classification")  # Instantiate the KNN model with the appropriate 'k'
-
-        knn_model.fit(X_train_fold, Y_train_fold)  # Train the model
-
-        Y_val_fold_pred = knn_model.predict(X_val_fold)  # Make predictions
-
-        acc = accuracy_fn(Y_val_fold_pred,Y_val_fold)
-        # acc = mse_fn(Y_val_fold_pred,Y_val_fold)
+        if T == "breed_identifying":
+            acc = accuracy_fn(Y_val_fold_pred,Y_val_fold)
+        else:
+            acc = mse_fn(Y_val_fold_pred,Y_val_fold)
         accuracies.append(acc)
         #Find the average validation accuracy over K:
-
+    print(accuracies)
     average_accuracy = np.sum(accuracies)/len(accuracies)
     return average_accuracy
 
 
-def run_cv_for_hyperparam(X, Y, K, k_list):
+def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
 
     '''
     K-Fold Cross validation function for K-NN
@@ -231,20 +230,52 @@ def run_cv_for_hyperparam(X, Y, K, k_list):
     Returns:
         model_performance: a list of validation accuracies corresponding to the k-values     
     '''
-
     model_performance = [] 
     for k in k_list:
-        model_performance.append(KFold_cross_validation_KNN(X,Y,K,k))
+        model_performance.append(KFold_cross_validation_KNN(X,Y,K,k,M,T))
 
     # Pick hyperparameter value that yields the best performance
-
     max = np.max(model_performance)
     max_occurences_indices = np.where(model_performance==max)[0]
     best_k=max_occurences_indices[-1]
 
-    #best_k = np.argmax(model_performance) #version plus simple mais retourne le premier element 
-
     # print(model_performance)
     print(f"Best number of nearest neighbors on validation set is k={best_k+1}")
     return model_performance
+
+
+### Functions for plotting 
+
+def plot_k_vs_accuracy(k_values, accuracies):
+
+    '''
+    Plot K values vs. validation accuracies.
+    Parameters:
+        k_values (list of int): A list of different k values used in KNN.
+        accuracies (list of float): A list of validation accuracies corresponding to each k value.
+    '''
+
+    plt.figure(figsize=(10, 6))  # Set figure size
+
+    plt.plot(k_values, accuracies, marker='o', linestyle='-', color='b')  # Plot k values vs accuracies
+
+    plt.xlabel('Number of Neighbors (k)')  # X-axis label
+
+    plt.ylabel('Validation Accuracy')  # Y-axis label
+
+    plt.title('KNN Performance: Number of Neighbors vs. Validation Accuracy')  # Title
+
+    plt.grid(True)  # Show grid
+
+    plt.xticks(k_values)  # Set x-ticks to be exact k values for better readability
+
+    # Highlight the best k value
+
+    max_accuracy = max(accuracies)  # Find the maximum accuracy
+
+    best_k = k_values[accuracies.index(max_accuracy)]  # Find the k value that corresponds to the maximum accuracy
+
+    plt.annotate(f'Best k={best_k}', xy=(best_k, max_accuracy),xytext=(best_k, max_accuracy),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
+
+    plt.show()
 

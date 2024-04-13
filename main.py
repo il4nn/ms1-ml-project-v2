@@ -7,69 +7,9 @@ from src.methods.dummy_methods import DummyClassifier
 from src.methods.logistic_regression import LogisticRegression
 from src.methods.linear_regression import LinearRegression 
 from src.methods.knn import KNN
-from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn, compute_mean, compute_std, create_validation_set,run_cv_for_hyperparam
+from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn, compute_mean, compute_std, create_validation_set,run_cv_for_hyperparam,plot_k_vs_accuracy
 import os
 np.random.seed(100)
-
-def evaluate_knn_on_validation_set(X_train, Y_train, X_val, Y_val, k):
-
-    '''
-
-    Trains and evaluates a KNN model on the provided training and validation sets.
-
-    Parameters:
-
-    - X_train: Feature matrix for the training data.
-
-    - Y_train: Labels for the training data.
-
-    - X_val: Feature matrix for the validation data.
-
-    - Y_val: Labels for the validation data.
-
-    - k: The number of neighbors to use in the KNN model.
-
-    Returns:
-    - accuracy: The accuracy of the KNN model on the validation set.
-
-    '''
-
-    # Instantiate the KNN model with the specified 'k'
-
-    knn_model = KNN(k)
-
-    # Train the KNN model on the training set
-    knn_model.fit(X_train, Y_train)
-
-    # Make predictions on the validation set
-    Y_val_pred = knn_model.predict(X_val)
-
-    # Calculate the accuracy of the predictions
-    accuracy = accuracy_fn(Y_val_pred, Y_val)
-
-    return accuracy
-
-
-
-def plot_k_vs_accuracy_cv(k_list, model_performance):
-
-    plt.figure(figsize=(9,4))
-
-    plt.plot(k_list, model_performance, marker='o')
-
-    plt.title("Performance on the k-fold cross validation for different values of $k$")
-
-    plt.xlabel("Number of nearest neighbors $k$")
-
-    plt.xticks(k_list)
-
-    plt.ylabel("Performance (accuracy)")
-
-    plt.grid(True)
-
-    plt.show()
-
-
 
 def main(args):
     """
@@ -100,7 +40,6 @@ def main(args):
 
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        ### WRITE YOUR CODE HERE
         if args.task == "breed_identifying":
             xtrain, ytrain, xtest, ytest = create_validation_set(xtrain,ytrain,0.2)
         else:
@@ -119,7 +58,6 @@ def main(args):
    
 
     ## 3. Initialize the method you want to use.
-
     # Use NN (FOR MS2!)
     if args.method == "nn":
         raise NotImplementedError("This will be useful for MS2.")
@@ -140,11 +78,13 @@ def main(args):
     
     ## 4. Train and evaluate the method
     if args.k_fold is not None:
-        k_list = range(1,100)  
+        k_list = range(1,25)  
         model_performance=[]
-        ## Start of the code 
-        model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list)
-        plot_k_vs_accuracy_cv(k_list,model_performance)
+        if args.task == "breed_identifying":
+            model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
+        else:
+            model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
+        plot_k_vs_accuracy(k_list,model_performance)
         # method_obj = KNN(k=args.K,task="classification")
     
     if args.task == "center_locating":
