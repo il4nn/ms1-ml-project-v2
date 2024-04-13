@@ -131,7 +131,6 @@ class KNN(object):
             Returns:
                 pred_labels (np.array): labels of shape (N,)
         """
-
         self.training_data = training_data
         self.training_labels = training_labels
         return self.predict(training_data)
@@ -146,5 +145,6 @@ class KNN(object):
                 test_labels (np.array): labels of shape (N,)
         """
         return np.apply_along_axis(self.kNN_one_example,1,test_data,self.training_data,self.training_labels,self.k,self.task_kind)
+
     
 
