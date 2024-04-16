@@ -1,7 +1,8 @@
-import numpy as np 
+import numpy as np
+from tqdm import tqdm
 from src.methods.knn import KNN
 from src.methods.linear_regression import LinearRegression
-from matplotlib import pyplot as plt 
+from matplotlib import pyplot as plt
 
 # Generaly utilies
 ##################
@@ -164,7 +165,6 @@ def mse_fn(pred,gt):
 ### Methods for K-fold cross validation 
 
 def KFold_cross_validation_KNN(X, Y, K, k,M,T):
-
     '''
     K-Fold Cross validation function for K-NN
     Inputs:
@@ -202,17 +202,17 @@ def KFold_cross_validation_KNN(X, Y, K, k,M,T):
             else:
                 model = KNN(k,task_kind="regression")
     
-        model.fit(X_train_fold, Y_train_fold)  # Train the model
+        model.fit(X_train_fold, Y_train_fold)
 
-        Y_val_fold_pred = model.predict(X_val_fold)  # Make predictions
+        Y_val_fold_pred = model.predict(X_val_fold)
 
         if T == "breed_identifying":
             acc = accuracy_fn(Y_val_fold_pred,Y_val_fold)
         else:
             acc = mse_fn(Y_val_fold_pred,Y_val_fold)
         accuracies.append(acc)
-        #Find the average validation accuracy over K:
-    print(accuracies)
+    
+    #Find the average validation accuracy over K:
     average_accuracy = np.sum(accuracies)/len(accuracies)
     return average_accuracy
 
@@ -228,20 +228,20 @@ def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
         k: a list of k values for kNN 
 
     Returns:
+        k : the optimal value k for the KNN
         model_performance: a list of validation accuracies corresponding to the k-values     
     '''
     model_performance = [] 
-    for k in k_list:
+    for k in tqdm(k_list):
         model_performance.append(KFold_cross_validation_KNN(X,Y,K,k,M,T))
 
     # Pick hyperparameter value that yields the best performance
     max = np.max(model_performance)
     max_occurences_indices = np.where(model_performance==max)[0]
-    best_k=max_occurences_indices[-1]
+    best_k = max_occurences_indices[-1]
 
-    # print(model_performance)
     print(f"Best number of nearest neighbors on validation set is k={best_k+1}")
-    return model_performance
+    return best_k, model_performance
 
 
 ### Functions for plotting 
@@ -256,26 +256,25 @@ def plot_k_vs_accuracy(k_values, accuracies):
     '''
 
     plt.figure(figsize=(10, 6))  # Set figure size
-
     plt.plot(k_values, accuracies, marker='o', linestyle='-', color='b')  # Plot k values vs accuracies
 
-    plt.xlabel('Number of Neighbors (k)')  # X-axis label
+    # Set X-axis and Y-axis labels
+    plt.xlabel('Number of Neighbors (k)')
+    plt.ylabel('Validation Accuracy')
 
-    plt.ylabel('Validation Accuracy')  # Y-axis label
+    # Set the plot title and enable grid 
+    plt.title('KNN Performance: Number of Neighbors vs. Validation Accuracy')
+    plt.grid(True)
 
-    plt.title('KNN Performance: Number of Neighbors vs. Validation Accuracy')  # Title
+    plt.xticks(k_values)
 
-    plt.grid(True)  # Show grid
+    # Find the k value that corresponds to the maximum accuracy
+    max_accuracy = max(accuracies)
+    best_k = k_values[accuracies.index(max_accuracy)] 
 
-    plt.xticks(k_values)  # Set x-ticks to be exact k values for better readability
-
-    # Highlight the best k value
-
-    max_accuracy = max(accuracies)  # Find the maximum accuracy
-
-    best_k = k_values[accuracies.index(max_accuracy)]  # Find the k value that corresponds to the maximum accuracy
-
+    # Annotate the plot with the best k value
     plt.annotate(f'Best k={best_k}', xy=(best_k, max_accuracy),xytext=(best_k, max_accuracy),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
 
+    # Display the plot
     plt.show()
 

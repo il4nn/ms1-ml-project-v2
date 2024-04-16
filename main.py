@@ -21,7 +21,6 @@ def main(args):
                           of this file). Their value can be accessed as "args.argument".
     """
     ## 1. First, we load our data and flatten the images into vectors
-
     ##EXTRACTED FEATURES DATASET
     if args.data_type == "features":
         feature_data = np.load('features.npz',allow_pickle=True)
@@ -81,11 +80,10 @@ def main(args):
         k_list = range(1,25)  
         model_performance=[]
         if args.task == "breed_identifying":
-            model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
+            bestk, model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
         else:
-            model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
+            bestk, model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
         plot_k_vs_accuracy(k_list,model_performance)
-        # method_obj = KNN(k=args.K,task="classification")
     
     if args.task == "center_locating":
         # Fit parameters on training data
