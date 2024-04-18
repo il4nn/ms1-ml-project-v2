@@ -4,7 +4,7 @@ from src.methods.knn import KNN
 from src.methods.linear_regression import LinearRegression
 from matplotlib import pyplot as plt
 
-# Generaly utilies
+# General utilies
 ##################
 
 def label_to_onehot(labels, C=None):
@@ -60,7 +60,7 @@ def normalize_fn(data, means, stds):
     Returns:
         (array): shape (N,D)
     """
-    # return the normalized features
+    # Return the normalized features
     return (data - means) / stds
 
 def get_n_classes(labels):
@@ -88,34 +88,6 @@ def compute_std(data):
         array: An array of shape (D,) containing the standard deviation of each sample
     """
     return np.std(data,axis=0)
-
-def create_validation_set(data,labels,split_ratio):
-    """"
-    Arguments:
-        data (array): An array of shape (N,D) where N is the number of samples and D the number of features 
-        labels (array): An array of shape (N,) where N is the number of samples 
-        split_ratio: The percentage of the data set that will act as a test set
-    Returns 
-        X_new_train: The feature matrix for the training set
-        Y_new_train: The label vector for the training set
-        X_new_test: The feature matrix for the validation set
-        Y_new_test: The label vector for the validation set 
-    """
-    N = data.shape[0] 
-    all_indices = np.arange(0,N)
-    np.random.shuffle(all_indices)
-
-    validation_set_nb_elements = int(split_ratio * N)
-    
-    validation_set_indices = all_indices[:validation_set_nb_elements]
-    train_set_indices = all_indices[validation_set_nb_elements:]
-
-    X_new_train = data[train_set_indices]
-    Y_new_train = labels[train_set_indices]
-    X_new_test = data[validation_set_indices]
-    Y_new_test = labels[validation_set_indices]
-
-    return X_new_train, Y_new_train, X_new_test, Y_new_test
 
 # Metrics
 #########
@@ -161,6 +133,35 @@ def mse_fn(pred,gt):
     loss = np.mean(loss)
     return loss
 
+### Methods added to create a validation set
+
+def create_validation_set(data,labels,split_ratio):
+    """"
+    Arguments:
+        data (array): An array of shape (N,D) where N is the number of samples and D the number of features 
+        labels (array): An array of shape (N,) where N is the number of samples 
+        split_ratio: The percentage of the data set that will act as a test set
+    Returns 
+        X_new_train: The feature matrix for the training set
+        Y_new_train: The label vector for the training set
+        X_new_test: The feature matrix for the validation set
+        Y_new_test: The label vector for the validation set 
+    """
+    N = data.shape[0] 
+    all_indices = np.arange(0,N)
+    np.random.shuffle(all_indices)
+
+    validation_set_nb_elements = int(split_ratio * N)
+    
+    validation_set_indices = all_indices[:validation_set_nb_elements]
+    train_set_indices = all_indices[validation_set_nb_elements:]
+
+    X_new_train = data[train_set_indices]
+    Y_new_train = labels[train_set_indices]
+    X_new_test = data[validation_set_indices]
+    Y_new_test = labels[validation_set_indices]
+
+    return X_new_train, Y_new_train, X_new_test, Y_new_test
 
 ### Methods for K-fold cross validation 
 
@@ -218,7 +219,6 @@ def KFold_cross_validation_KNN(X, Y, K, k,M,T):
 
 
 def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
-
     '''
     K-Fold Cross validation function for K-NN
     Inputs:
@@ -236,17 +236,22 @@ def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
         model_performance.append(KFold_cross_validation_KNN(X,Y,K,k,M,T))
 
     # Pick hyperparameter value that yields the best performance
-    max = np.max(model_performance)
-    max_occurences_indices = np.where(model_performance==max)[0]
-    best_k = max_occurences_indices[-1]
+    if T == "breed_identifying":
+        max = np.max(model_performance)
+        max_occurences_indices = np.where(model_performance==max)[0] 
+        best_k = max_occurences_indices[-1]+1
+    else:
+        max = np.min(model_performance)
+        max_occurences_indices = np.where(model_performance==max)[0]
+        best_k = max_occurences_indices[-1]+1
 
-    print(f"Best number of nearest neighbors on validation set is k={best_k+1}")
-    return best_k, model_performance
+    print(f"Best number of nearest neighbors on validation set is k={best_k}")
+    return best_k, max, model_performance
 
 
 ### Functions for plotting 
 
-def plot_k_vs_accuracy(k_values, accuracies):
+def plot_k_vs_accuracy(k_values, accuracies,best_k, max,task):
 
     '''
     Plot K values vs. validation accuracies.
@@ -260,7 +265,10 @@ def plot_k_vs_accuracy(k_values, accuracies):
 
     # Set X-axis and Y-axis labels
     plt.xlabel('Number of Neighbors (k)')
-    plt.ylabel('Validation Accuracy')
+    if task == "breed_identifying":
+        plt.ylabel('Validation Accuracy')
+    else:
+        plt.ylabel('Test loss')
 
     # Set the plot title and enable grid 
     plt.title('KNN Performance: Number of Neighbors vs. Validation Accuracy')
@@ -268,12 +276,8 @@ def plot_k_vs_accuracy(k_values, accuracies):
 
     plt.xticks(k_values)
 
-    # Find the k value that corresponds to the maximum accuracy
-    max_accuracy = max(accuracies)
-    best_k = k_values[accuracies.index(max_accuracy)] 
-
     # Annotate the plot with the best k value
-    plt.annotate(f'Best k={best_k}', xy=(best_k, max_accuracy),xytext=(best_k, max_accuracy),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
+    plt.annotate(f'Best k={best_k}', xy=(best_k, max),xytext=(best_k, max),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
 
     # Display the plot
     plt.show()

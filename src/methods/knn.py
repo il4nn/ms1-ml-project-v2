@@ -44,9 +44,9 @@ class KNN(object):
         Outputs:
             euclidean distances: shape (N,)
         """   
-        return np.sum(np.square(example - training_examples) / (example + training_examples), axis=1)
+        return np.sqrt(np.sum(np.square(example - training_examples) / (example + training_examples), axis=1))
  
-    def l3_norm(example, training_examples,epsilon=1e-10):
+    def l3_norm(self,example, training_examples,epsilon=1e-10):
         return (np.sum((np.abs(example-training_examples))**3,axis=1))**(1/3)
 
     def l4_norm(example, training_examples):
@@ -54,14 +54,11 @@ class KNN(object):
 
 
 
-    def cosine_distances_to_all( example,training_examples):
-
+    def cosine_distances_to_all(self,example,training_examples):
         # Normaliser chaque vecteur d'entraînement
-
         normalized_training = training_examples / np.linalg.norm(training_examples, axis=1, keepdims=True)
 
         # Normaliser l'exemple
-
         normalized_example = example / np.linalg.norm(example)
 
         # Calculer la similarité cosinus pour tous les exemples
@@ -69,7 +66,6 @@ class KNN(object):
         cosine_similarities = normalized_training @ normalized_example
 
         # Convertir les similarités en distances
-
         return 1 - cosine_similarities
     
 

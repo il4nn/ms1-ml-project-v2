@@ -39,6 +39,7 @@ def main(args):
 
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
+        print("validation set")
         if args.task == "breed_identifying":
             xtrain, ytrain, xtest, ytest = create_validation_set(xtrain,ytrain,0.2)
         else:
@@ -76,14 +77,17 @@ def main(args):
     
     
     ## 4. Train and evaluate the method
+
+    ## Implemented K-FOLD via CLI to fine-tune KNN hyperparameters  
+    ## Usage: python3 main.py --method knn --task [TASK_NAME] --k_fold [NUMBER_OF_FOLDS] --test (Optional, add if not using the validation set)
     if args.k_fold is not None:
-        k_list = range(1,25)  
+        k_list = range(1,100) 
         model_performance=[]
         if args.task == "breed_identifying":
-            bestk, model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
+            bestk, max, model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
         else:
-            bestk, model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
-        plot_k_vs_accuracy(k_list,model_performance)
+            bestk, max, model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
+        plot_k_vs_accuracy(k_list,model_performance,bestk,max)
     
     if args.task == "center_locating":
         # Fit parameters on training data
@@ -116,7 +120,6 @@ def main(args):
         print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
     else:
         raise Exception("Invalid choice of task! Only support center_locating and breed_identifying!")
-
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
 
@@ -134,7 +137,6 @@ if __name__ == '__main__':
     parser.add_argument('--max_iters', type=int, default=100, help="max iters for methods which are iterative")
     parser.add_argument('--test', action="store_true", help="train on whole training data and evaluate on the test data, otherwise use a validation set")
 
-    ## Arguments added by me
     parser.add_argument('--k_fold',type=int,help="the number of folds for k-fold cross-validation")
     # Feel free to add more arguments here if you need!
 

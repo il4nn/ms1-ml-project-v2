@@ -1,8 +1,6 @@
 import numpy as np
 from src.utils import get_n_classes,label_to_onehot,onehot_to_label
 
-# from logistic_regression import soft_max
-
 
 class LogisticRegression(object):
     """
@@ -39,7 +37,7 @@ class LogisticRegression(object):
         return data.T @ (self.soft_max(data,W) - labels)
     
 
-    def __init__(self, lr, max_iters=500):
+    def __init__(self, lr, max_iters=500, task_kind = "classification"):
         """
         Initialize the new object (see dummy_methods.py)
         and set its arguments.
@@ -50,6 +48,7 @@ class LogisticRegression(object):
         """
         self.lr = lr
         self.max_iters = max_iters
+        self.task_kind = task_kind
 
 
     def fit(self, training_data, training_labels):
@@ -64,6 +63,7 @@ class LogisticRegression(object):
         """
         weights = np.random.normal(0, 0.1, (training_data.shape[1], get_n_classes(training_labels)))
         training_labels = label_to_onehot(training_labels)
+        
         for it in range(self.max_iters):
             gradient = self.gradient_logistic_multi(training_data,training_labels,weights)
             weights = weights - self.lr * gradient 
