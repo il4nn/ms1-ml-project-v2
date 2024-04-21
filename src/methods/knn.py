@@ -10,7 +10,6 @@ class KNN(object):
 
     def find_k_nearest_neighbors(self,k, distances):
         """ Find the indices of the k smallest distances from a list of distances.
-            Tip: use np.argsort()
 
         Inputs:
             k: integer
@@ -33,39 +32,50 @@ class KNN(object):
         """
         return np.sqrt(np.sum(np.square(example - training_examples),axis = 1))
 
-
-    def chi_square_dist(self,example, training_examples, epsilon=1e-10):
-        """Compute the Chi square distance between a single example
+    def l3_norm(self,example, training_examples,epsilon=1e-10):
+        """Compute the L3-Norm between a single example
         vector and all training_examples.
 
         Inputs:
             example: shape (D,)
             training_examples: shape (NxD) 
         Outputs:
-            euclidean distances: shape (N,)
-        """   
-        return np.sqrt(np.sum(np.square(example - training_examples) / (example + training_examples), axis=1))
- 
-    def l3_norm(self,example, training_examples,epsilon=1e-10):
+            l3 norm: shape (N,)
+        """
         return (np.sum((np.abs(example-training_examples))**3,axis=1))**(1/3)
 
-    def l4_norm(example, training_examples):
-        return (np.sum((example-training_examples)**4,axis=1))**(1/4)
+    def manhattan_distance(self,example,training_examples):
+        """Compute the Manhattan distance (L1-Norm) between a single example
+        vector and all training_examples.
 
-
+        Inputs:
+            example: shape (D,)
+            training_examples: shape (NxD) 
+        Outputs:
+            manhattan distances: shape (N,)
+        """
+        return (np.sum(np.abs(example - training_examples),axis = 1))
 
     def cosine_distances_to_all(self,example,training_examples):
-        # Normaliser chaque vecteur d'entraînement
+        """Compute the Cosine Distance between a single example
+        vector and all training_examples.
+
+        Inputs:
+            example: shape (D,)
+            training_examples: shape (NxD) 
+        Outputs:
+            cosine distances: shape (N,)
+        """
+        # Normalize each training vector
         normalized_training = training_examples / np.linalg.norm(training_examples, axis=1, keepdims=True)
 
-        # Normaliser l'exemple
+        # Normalize the example vector
         normalized_example = example / np.linalg.norm(example)
 
-        # Calculer la similarité cosinus pour tous les exemples
-
+        # Compute cosine similarity for all examples
         cosine_similarities = normalized_training @ normalized_example
 
-        # Convertir les similarités en distances
+        # Convert similarities into distances
         return 1 - cosine_similarities
     
 
@@ -104,6 +114,7 @@ class KNN(object):
             return self.predict_label_aux(neighbor_labels)
         else:
             return np.mean(neighbor_labels,axis=0)
+
 
     ### Provided code
     def __init__(self, k=1, task_kind = "classification"):

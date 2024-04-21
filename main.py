@@ -7,7 +7,7 @@ from src.methods.dummy_methods import DummyClassifier
 from src.methods.logistic_regression import LogisticRegression
 from src.methods.linear_regression import LinearRegression 
 from src.methods.knn import KNN
-from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn, compute_mean, compute_std, create_validation_set,run_cv_for_hyperparam,plot_k_vs_accuracy
+from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn, compute_mean, compute_std, create_validation_set,run_cv_for_hyperparam,plot_k_vs_accuracy_cv
 import os
 np.random.seed(100)
 
@@ -39,7 +39,6 @@ def main(args):
 
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        print("validation set")
         if args.task == "breed_identifying":
             xtrain, ytrain, xtest, ytest = create_validation_set(xtrain,ytrain,0.2)
         else:
@@ -81,13 +80,13 @@ def main(args):
     ## Implemented K-FOLD via CLI to fine-tune KNN hyperparameters  
     ## Usage: python3 main.py --method knn --task [TASK_NAME] --k_fold [NUMBER_OF_FOLDS] --test (Optional, add if not using the validation set)
     if args.k_fold is not None:
-        k_list = range(1,100) 
+        k_list = range(1,25) 
         model_performance=[]
         if args.task == "breed_identifying":
             bestk, max, model_performance = run_cv_for_hyperparam(xtrain, ytrain, args.k_fold, k_list,args.method,args.task)
         else:
             bestk, max, model_performance = run_cv_for_hyperparam(xtrain, ctrain, args.k_fold, k_list,args.method,args.task)
-        plot_k_vs_accuracy(k_list,model_performance,bestk,max)
+        plot_k_vs_accuracy_cv(k_list,model_performance,args.k_fold,args.task)
     
     if args.task == "center_locating":
         # Fit parameters on training data
@@ -137,8 +136,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_iters', type=int, default=100, help="max iters for methods which are iterative")
     parser.add_argument('--test', action="store_true", help="train on whole training data and evaluate on the test data, otherwise use a validation set")
 
+    #Argument for K-Cross Validation
     parser.add_argument('--k_fold',type=int,help="the number of folds for k-fold cross-validation")
-    # Feel free to add more arguments here if you need!
 
     # MS2 arguments
     parser.add_argument('--nn_type', default="cnn", help="which network to use, can be 'Transformer' or 'cnn'")

@@ -28,11 +28,10 @@ class LinearRegression(object):
         """
 
         self.weights = (np.linalg.inv(training_data.T @ training_data + self.lmda * np.eye(training_data.shape[1])) @ training_data.T ) @ training_labels
-        return training_data @ self.weights
+        return self.predict(training_data)
 
 
     def predict(self, test_data):
-        
         """
             Runs prediction on the test data.
             

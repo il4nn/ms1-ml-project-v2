@@ -180,10 +180,12 @@ def KFold_cross_validation_KNN(X, Y, K, k,M,T):
     '''
 
     N = X.shape[0]
-    accuracies = []  # list of accuracies
+    accuracies = [] # list of accuracies
+    f1_score = []
     all_indices = np.arange(N)
     np.random.shuffle(all_indices)
     for fold_ind in range(K):
+
         #Split the data into training and validation folds:
         split_size = N // K
 
@@ -202,20 +204,27 @@ def KFold_cross_validation_KNN(X, Y, K, k,M,T):
                 model = KNN(k,task_kind="classification")  # Instantiate the KNN model with the appropriate 'k'
             else:
                 model = KNN(k,task_kind="regression")
-    
         model.fit(X_train_fold, Y_train_fold)
 
         Y_val_fold_pred = model.predict(X_val_fold)
 
         if T == "breed_identifying":
             acc = accuracy_fn(Y_val_fold_pred,Y_val_fold)
+            f1 = macrof1_fn(Y_val_fold_pred,Y_val_fold)
+            f1_score.append(f1)
         else:
             acc = mse_fn(Y_val_fold_pred,Y_val_fold)
         accuracies.append(acc)
+        
+
     
     #Find the average validation accuracy over K:
     average_accuracy = np.sum(accuracies)/len(accuracies)
-    return average_accuracy
+    if T == "breed_identifying":
+        average_f1score = np.sum(f1_score)/len(f1_score )
+        return (average_accuracy,average_f1score)
+    else:
+        return average_accuracy
 
 
 def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
@@ -245,40 +254,69 @@ def run_cv_for_hyperparam(X, Y, K, k_list,M,T):
         max_occurences_indices = np.where(model_performance==max)[0]
         best_k = max_occurences_indices[-1]+1
 
+    # print("Max accuracy is {max}")
     print(f"Best number of nearest neighbors on validation set is k={best_k}")
     return best_k, max, model_performance
 
 
 ### Functions for plotting 
 
-def plot_k_vs_accuracy(k_values, accuracies,best_k, max,task):
+def plot_k_vs_accuracy_cv(k_list, model_performance,K_fold,task):
 
     '''
-    Plot K values vs. validation accuracies.
+    Plot K values vs. Validation accuracies and F1-Score in percentage.
     Parameters:
         k_values (list of int): A list of different k values used in KNN.
         accuracies (list of float): A list of validation accuracies corresponding to each k value.
     '''
-
-    plt.figure(figsize=(10, 6))  # Set figure size
-    plt.plot(k_values, accuracies, marker='o', linestyle='-', color='b')  # Plot k values vs accuracies
-
-    # Set X-axis and Y-axis labels
-    plt.xlabel('Number of Neighbors (k)')
+    
     if task == "breed_identifying":
-        plt.ylabel('Validation Accuracy')
+        plt.figure(figsize=(18,8))
+
+        model_performance=np.array(model_performance)
+        f1_scores_tab=model_performance[:,1]*100
+        accuracy_scores_tab=model_performance[:,0]
+
+        # Plot K values vs accuracies and K values vs F1-score
+        plt.plot(k_list, f1_scores_tab, marker='x', label='F1-score', color='b')
+        plt.plot(k_list, accuracy_scores_tab, marker='o', label='Accuracy', color='r')
+
+        # Set X-axis and Y-axis labels
+        plt.xlabel("Number of nearest neighbors $k$")
+        plt.ylabel("Performance in %")
+
+        # Set the plot title and enable grid 
+        plt.title(f"Performance of the {K_fold}-fold cross validation for different values of $k$")
+        plt.grid(True)
+
+        plt.xticks(k_list)
+
+        # Annotate the plot with the best k value
+        max=np.max(model_performance)
+        max_occurences_indices=np.where(model_performance==max)[0]
+        best_k=max_occurences_indices[-1]+1 # to take into account the indexing , and we check for the biggest value of k that gives us the best performance starting from the end of the tab to minimize the complexity of the model
+        plt.annotate(f'Best k={best_k}', xy=(best_k, max), xytext=(best_k, max),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
+        max_f1_score = np.max(model_performance[:, 1])
+        best_k_f1_score = k_list[np.argmax(model_performance[:, 1])]
+
+        plt.annotate(f'Best k for F1-score={best_k_f1_score}', xy=(best_k_f1_score, max_f1_score), xytext=(best_k_f1_score, max_f1_score),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
     else:
+        plt.figure(figsize=(18,8))
+        plt.plot(k_list, model_performance, marker='o', linestyle='-', color='r')  # Plot k values vs accuracies
+
+        # Set X-axis and Y-axis labels
+        plt.xlabel("Number of nearest neighbors $k$")
         plt.ylabel('Test loss')
 
-    # Set the plot title and enable grid 
-    plt.title('KNN Performance: Number of Neighbors vs. Validation Accuracy')
-    plt.grid(True)
+        plt.title('KNN Performance: Number of Neighbors vs. Test Loss')
+        plt.grid(True)
+        plt.xticks(k_list)
+         # Annotate the plot with the best k value
+        max=np.min(model_performance)
+        max_occurences_indices=np.where(model_performance==max)[0]
+        best_k=max_occurences_indices[-1]+1 
+        plt.annotate(f'Best k={best_k}', xy=(best_k, max),xytext=(best_k, max),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
 
-    plt.xticks(k_values)
-
-    # Annotate the plot with the best k value
-    plt.annotate(f'Best k={best_k}', xy=(best_k, max),xytext=(best_k, max),arrowprops=dict(facecolor='red', shrink=0.05),horizontalalignment='center')
-
-    # Display the plot
+    plt.legend()
     plt.show()
 
